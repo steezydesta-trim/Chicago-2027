@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chicago 2027">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Chicago 2027</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0a0a0a;
+  --bg2:#111111;
+  --bg3:#1a1a1a;
+  --border:#2a2a2a;
+  --border2:#333;
+  --text:#f0f0f0;
+  --text2:#888;
+  --text3:#555;
+  --green:#00e676;
+  --green-dim:#1a3d2a;
+  --red:#ff4444;
+  --red-dim:#3d1a1a;
+  --amber:#ffaa00;
+  --amber-dim:#3d2a00;
+  --blue:#4488ff;
+  --blue-dim:#1a2a3d;
+  --safe-top:env(safe-area-inset-top);
+  --safe-bot:env(safe-area-inset-bottom);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden;}
+#app{height:100%;display:flex;flex-direction:column;}
+
+/* TOP BAR */
+#topbar{
+  padding:calc(var(--safe-top) + 16px) 20px 16px;
+  border-bottom:0.5px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg);
+  flex-shrink:0;
+}
+#topbar .logo{font-size:18px;font-weight:800;letter-spacing:-0.5px;}
+#topbar .logo span{color:var(--green);}
+#topbar .date{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);}
+
+/* CONTENT */
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(80px + var(--safe-bot));}
+
+/* NAV */
+#nav{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:12px 0 calc(var(--safe-bot) + 12px);
+  background:var(--bg);
+  border-top:0.5px solid var(--border);
+  display:flex;justify-content:space-around;
+  z-index:100;
+}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--text3);font-family:'Syne',sans-serif;font-size:10px;font-weight:500;cursor:pointer;padding:4px 12px;border-radius:8px;transition:color 0.15s;}
+.nav-btn.active{color:var(--green);}
+.nav-btn svg{width:22px;height:22px;}
+
+/* SCREENS */
+.screen{display:none;padding:20px;}
+.screen.active{display:block;}
+
+/* DASHBOARD */
+.countdown-block{
+  background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;
+  padding:20px;margin-bottom:16px;text-align:center;
+}
+.countdown-num{font-size:56px;font-weight:800;line-height:1;letter-spacing:-3px;color:var(--green);}
+.countdown-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;}
+
+.debt-ring-wrap{display:flex;justify-content:center;margin:8px 0 16px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;}
+.stat-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.stat-val{font-size:20px;font-weight:700;letter-spacing:-0.5px;}
+.stat-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;}
+.green{color:var(--green);}
+.red{color:var(--red);}
+.amber{color:var(--amber);}
+.blue{color:var(--blue);}
+
+/* SECTION HEADERS */
+.sec-head{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em;margin:20px 0 10px;display:flex;align-items:center;gap:8px;}
+.sec-head::after{content:'';flex:1;height:0.5px;background:var(--border);}
+
+/* DEBT CARDS */
+.debt-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;}
+.debt-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.debt-name{font-size:14px;font-weight:600;}
+.debt-badge{font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:6px;font-weight:500;}
+.debt-bal{font-size:22px;font-weight:800;letter-spacing:-1px;}
+.debt-rate{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);margin-top:2px;}
+.progress-bar{height:4px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.5s;}
+
+/* INPUT ROWS */
+.input-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.input-label{font-size:13px;color:var(--text2);flex:1;}
+.money-input{background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;font-weight:500;padding:10px 12px;width:130px;text-align:right;}
+.money-input:focus{outline:none;border-color:var(--green);}
+
+/* BUTTONS */
+.btn-primary{width:100%;background:var(--green);color:#000;border:none;border-radius:12px;padding:14px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.3px;margin-top:8px;}
+.btn-primary:active{opacity:0.85;transform:scale(0.99);}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:0.5px solid var(--border2);border-radius:10px;padding:10px 16px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-ghost:active{opacity:0.7;}
+
+/* TIMELINE */
+.timeline-item{display:flex;gap:12px;margin-bottom:0;}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0;}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.tl-line{width:1px;flex:1;background:var(--border);margin:4px 0;}
+.tl-body{flex:1;padding-bottom:20px;}
+.tl-month{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;}
+.tl-event{font-size:13px;font-weight:600;margin:2px 0;}
+.tl-detail{font-size:12px;color:var(--text2);line-height:1.5;}
+.tl-milestone{font-family:'DM Mono',monospace;font-size:11px;padding:3px 8px;border-radius:6px;display:inline-block;margin-top:4px;}
+
+/* RULES */
+.rule-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;}
+.rule-num{width:28px;height:28px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);flex-shrink:0;}
+.rule-title{font-size:13px;font-weight:700;margin-bottom:4px;}
+.rule-body{font-size:12px;color:var(--text2);line-height:1.55;}
+
+/* FLIP TRACKER */
+.flip-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;}
+.flip-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.flip-car{font-size:14px;font-weight:700;}
+.flip-profit{font-size:18px;font-weight:800;}
+.flip-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);}
+.delete-btn{background:var(--red-dim);color:var(--red);border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;}
+
+/* CHECKIN */
+.check-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:0.5px solid var(--border);}
+.check-item:last-child{border-bottom:none;}
+.check-circle{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.check-circle.done{background:var(--green);border-color:var(--green);}
+.check-text{font-size:13px;flex:1;line-height:1.4;}
+.check-text.done{color:var(--text3);text-decoration:line-through;}
+
+/* TOAST */
+#toast{position:fixed;top:calc(var(--safe-top) + 70px);left:50%;transform:translateX(-50%) translateY(-20px);background:var(--green);color:#000;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;padding:8px 16px;border-radius:8px;opacity:0;transition:all 0.25s;pointer-events:none;z-index:999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* MODAL */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:none;align-items:flex-end;}
+#modal-overlay.open{display:flex;}
+#modal{background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px calc(var(--safe-bot) + 24px);width:100%;border-top:0.5px solid var(--border);}
+#modal h3{font-size:18px;font-weight:800;margin-bottom:16px;}
+.modal-input{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:12px 14px;margin-bottom:10px;}
+.modal-input:focus{outline:none;border-color:var(--green);}
+.modal-row{display:flex;gap:8px;}
+.btn-cancel{flex:1;background:var(--bg3);color:var(--text2);border:0.5px solid var(--border2);border-radius:10px;padding:13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.btn-save{flex:2;background:var(--green);color:#000;border:none;border-radius:10px;padding:13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div class="logo">CHICAGO <span>2027</span></div>
+    <div class="date" id="topDate"></div>
+  </div>
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div class="screen active" id="screen-dash">
+      <div class="countdown-block">
+        <div class="countdown-num" id="daysLeft">--</div>
+        <div class="countdown-label">days to Chicago</div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Priority Debt</div>
+          <div class="stat-val red" id="dash-priority">--</div>
+          <div class="stat-sub" id="dash-priority-sub">remaining</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Goldman HYSA</div>
+          <div class="stat-val green" id="dash-goldman">--</div>
+          <div class="stat-sub">Chicago fund</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Flip Income</div>
+          <div class="stat-val amber" id="dash-flips">--</div>
+          <div class="stat-sub" id="dash-flips-sub">this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Net Worth Δ</div>
+          <div class="stat-val" id="dash-networth">--</div>
+          <div class="stat-sub">vs. start</div>
+        </div>
+      </div>
+
+      <div class="sec-head">Current debts</div>
+
+      <div class="debt-card">
+        <div class="debt-top">
+          <div>
+            <div class="debt-name">Capital One Venture X</div>
+            <div class="debt-rate">22% APR · ~$10/day interest</div>
+          </div>
+          <div class="debt-badge red" style="background:var(--red-dim);color:var(--red);">PRIORITY 1</div>
+        </div>
+        <div class="debt-bal red" id="vx-bal">$14,919</div>
+        <div class="progress-bar"><div class="progress-fill" id="vx-bar" style="background:var(--red);"></div></div>
+      </div>
+
+      <div class="debt-card">
+        <div class="debt-top">
+          <div>
+            <div class="debt-name">SoFi Private Loan</div>
+            <div class="debt-rate">15.05% APR</div>
+          </div>
+          <div class="debt-badge" style="background:var(--amber-dim);color:var(--amber);">PRIORITY 2</div>
+        </div>
+        <div class="debt-bal amber" id="sofi-bal">$10,783</div>
+        <div class="progress-bar"><div class="progress-fill" id="sofi-bar" style="background:var(--amber);"></div></div>
+      </div>
+
+      <div class="debt-card">
+        <div class="debt-top">
+          <div>
+            <div class="debt-name">Mom</div>
+            <div class="debt-rate">0% · relationship priority</div>
+          </div>
+          <div class="debt-badge" style="background:var(--blue-dim);color:var(--blue);">PRIORITY 3</div>
+        </div>
+        <div class="debt-bal blue" id="mom-bal">$8,000</div>
+        <div class="progress-bar"><div class="progress-fill" id="mom-bar" style="background:var(--blue);"></div></div>
+      </div>
+
+      <div class="debt-card">
+        <div class="debt-top">
+          <div>
+            <div class="debt-name">Lawyer</div>
+            <div class="debt-rate">$500/mo payment plan</div>
+          </div>
+          <div class="debt-badge" style="background:var(--bg3);color:var(--text2);">PRIORITY 4</div>
+        </div>
+        <div class="debt-bal" id="lawyer-bal">$3,000</div>
+        <div class="progress-bar"><div class="progress-fill" id="lawyer-bar" style="background:var(--text3);"></div></div>
+      </div>
+
+      <div class="debt-card" style="border-color:var(--border);">
+        <div class="debt-top">
+          <div>
+            <div class="debt-name">Federal Student Loans</div>
+            <div class="debt-rate">~6% · minimums only</div>
+          </div>
+          <div class="debt-badge" style="background:var(--bg3);color:var(--text3);">MINIMUMS</div>
+        </div>
+        <div class="debt-bal" style="color:var(--text2);" id="fed-bal">$24,503</div>
+        <div class="debt-rate" style="margin-top:4px;">Follow you to Chicago · keep paying $274/mo</div>
+      </div>
+
+      <button class="btn-primary" onclick="openUpdateModal()">UPDATE BALANCES</button>
+    </div>
+
+    <!-- TRACKER -->
+    <div class="screen" id="screen-tracker">
+      <div class="sec-head">Car flip business</div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Profit</div>
+          <div class="stat-val green" id="flip-total">$0</div>
+          <div class="stat-sub">all time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">This Month</div>
+          <div class="stat-val amber" id="flip-month">$0</div>
+          <div class="stat-sub" id="flip-count">0 flips</div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="openFlipModal()" style="margin-bottom:16px;">+ LOG A FLIP</button>
+
+      <div class="sec-head">Flip history</div>
+      <div id="flip-list"><div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0;">No flips logged yet.<br>Log your first Craig run.</div></div>
+
+      <div class="sec-head">Windfalls to log</div>
+      <div class="debt-card">
+        <div class="debt-name" style="margin-bottom:8px;">Pending income</div>
+        <div class="input-row">
+          <div class="input-label">Mechanic lawsuit ×2</div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--green);">$2,600</div>
+        </div>
+        <div class="input-row">
+          <div class="input-label">Progressive settlement</div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text2);">up to $8,000</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px;">Windfalls → 100% to Venture X first. Keep $300 reward.</div>
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="screen" id="screen-timeline">
+      <div class="sec-head">Payoff timeline</div>
+
+      <div style="padding:4px 0;">
+        <div class="timeline-item">
+          <div class="tl-left"><div class="tl-dot" style="background:var(--red);"></div><div class="tl-line"></div></div>
+          <div class="tl-body">
+            <div class="tl-month">Jun 2026</div>
+            <div class="tl-event">Vehicle sales hit</div>
+            <div class="tl-detail">Sell Civic ($4k), Sequoia ($5-7k), Miata ($2.5k). $11,500 goes straight to Venture X. Balance drops to ~$2,319. List cars this weekend.</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="tl-left"><div class="tl-dot" style="background:var(--red);"></div><div class="tl-line"></div></div>
+          <div class="tl-body">
+            <div class="tl-month">Jul 2026</div>
+            <div class="tl-event red">Venture X: $0 ★</div>
+            <div class="tl-detail">Credit card debt dead. Car flips + job attacks finish it off. Never pay 22% APR again.</div>
+            <div class="tl-milestone" style="background:var(--red-dim);color:var(--red);">MILESTONE</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="tl-left"><div class="tl-dot" style="background:var(--amber);"></div><div class="tl-line"></div></div>
+          <div class="tl-body">
+            <div class="tl-month">Aug 2026</div>
+            <div class="tl-event">New job starts</div>
+            <div class="tl-detail">$5,000–6,000/mo take-home hits. Attack jumps to $7,000+/mo combined with flips. SoFi gets demolished.</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="tl-left"><div class="tl-dot" style="background:var(--amber);"></div><div class="tl-line"></div></div>
+          <div class="tl-body">
+            <div class="tl-month">Sep 2026</div>
+            <div class="tl-event amber">SoFi: $0 ★</div>
+            <div class="tl-detail">Private student loan gone. Goldman HYSA starts filling. No more 15% interest eating your paycheck.</div>
+            <div class="tl-milestone" style="background:var(--amber-dim);color:var(--amber);">MILESTONE</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="tl-left"><div class="tl-dot" style="background:var(--text2);"></div><div class="tl-line"></div></div>
+          <div class="tl-body">
+            <div class="tl-month">Nov 2026</div>
+            <div class="tl-event">Lawyer: $0 ★</div>
+            <div class="tl-detail">$500/mo payment plan complete. Goldman accelerates. Life fund unlocks to $300/mo.</div>
+            <div class="tl-milestone" style="background:var(--bg3);color:var(--text2);">MILESTONE</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="tl-left"><div class="tl-dot" style="background:var(--blue);"></div><div class="tl-line"></div></div>
+          <div class="tl-body">
+            <div class="tl-month">Sep 2027</div>
+            <div class="tl-event blue">Mom: $0 ★</div>
+            <div class="tl-detail">$8,000 fully repaid. Relationship restored. Full $3,181+/mo floods Goldman for final push.</div>
+            <div class="tl-milestone" style="background:var(--blue-dim);color:var(--blue);">MILESTONE</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="tl-left"><div class="tl-dot" style="background:var(--green);"></div></div>
+          <div class="tl-body">
+            <div class="tl-month">Oct 2027</div>
+            <div class="tl-event green">Chicago ★★★</div>
+            <div class="tl-detail">$25,034+ in Goldman. Zero bad debt. Capital markets experience. New city. New chapter. You did it.</div>
+            <div class="tl-milestone" style="background:var(--green-dim);color:var(--green);">THE GOAL</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-head">Budget</div>
+      <div class="debt-card">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;"><span style="color:var(--text2);">Groceries</span><span style="font-family:'DM Mono',monospace;">$200</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;"><span style="color:var(--text2);">Gas</span><span style="font-family:'DM Mono',monospace;">$150</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;"><span style="color:var(--text2);">Root Insurance</span><span style="font-family:'DM Mono',monospace;">$380</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;"><span style="color:var(--text2);">Planet Fitness</span><span style="font-family:'DM Mono',monospace;">$25</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;"><span style="color:var(--text2);">Fed loan min</span><span style="font-family:'DM Mono',monospace;">$274</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;"><span style="color:var(--text2);">SoFi min</span><span style="font-family:'DM Mono',monospace;">$196</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;"><span style="color:var(--text2);">Phone + subs</span><span style="font-family:'DM Mono',monospace;">$35</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:14px;font-weight:700;"><span>Survival total</span><span style="font-family:'DM Mono',monospace;color:var(--green);">$1,260</span></div>
+      </div>
+    </div>
+
+    <!-- CHECK-IN -->
+    <div class="screen" id="screen-checkin">
+      <div class="sec-head">Weekly check-in</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:'DM Mono',monospace;">Every Sunday · 10 minutes · non-negotiable</div>
+
+      <div class="debt-card" id="checklist-container">
+        <div class="check-item" data-key="no-cash">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">Zero cash withdrawals this week</div>
+        </div>
+        <div class="check-item" data-key="monarch">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">Checked Monarch — all transactions categorized</div>
+        </div>
+        <div class="check-item" data-key="balances">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">Updated debt balances in this app</div>
+        </div>
+        <div class="check-item" data-key="goldman">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">Goldman HYSA balance confirmed</div>
+        </div>
+        <div class="check-item" data-key="48hr">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">No impulse purchases — 48hr rule held</div>
+        </div>
+        <div class="check-item" data-key="flips">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">Car flip pipeline — what's next?</div>
+        </div>
+        <div class="check-item" data-key="chicago">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">Asked "does this get me to Chicago faster?"</div>
+        </div>
+        <div class="check-item" data-key="interview">
+          <div class="check-circle" onclick="toggleCheck(this)"></div>
+          <div class="check-text">Job interview prep / application sent</div>
+        </div>
+      </div>
+
+      <div id="checkin-score" style="text-align:center;padding:16px 0;font-size:13px;color:var(--text2);"></div>
+      <button class="btn-primary" onclick="resetCheckin()">RESET FOR NEW WEEK</button>
+
+      <div class="sec-head" style="margin-top:24px;">The 8 rules</div>
+
+      <div class="rule-card">
+        <div class="rule-num">1</div>
+        <div><div class="rule-title">Zero cash withdrawals. Forever.</div><div class="rule-body">$33k disappeared into cash in 6 months. Every dollar is on a card or it doesn't get spent.</div></div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">2</div>
+        <div><div class="rule-title">Auto-transfer fires morning after payday.</div><div class="rule-body">You cannot spend money that already moved. Set it once, never touch it.</div></div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">3</div>
+        <div><div class="rule-title">Windfalls → 100% to debt. Keep $300.</div><div class="rule-body">Car sales, lawsuits, settlement — same day it lands, it moves. You keep $300 as reward. The rest goes immediately.</div></div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">4</div>
+        <div><div class="rule-title">48-hour rule on anything over $50.</div><div class="rule-body">Wait 48 hours. 80% of the time you won't want it anymore. Saves $400-600/mo based on your history.</div></div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">5</div>
+        <div><div class="rule-title">Goldman is untouchable until Chicago.</div><div class="rule-body">Not for emergencies unless medical. Not for a trip. Not for a deal. The number only goes up.</div></div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">6</div>
+        <div><div class="rule-title">Track every flip like a business.</div><div class="rule-body">Buy price, Craig run cost, mechanic cost, sale price, net. You're running a business. Know your margins.</div></div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">7</div>
+        <div><div class="rule-title">Sunday money check — 10 minutes.</div><div class="rule-body">Open this app. Update balances. Check Monarch. Compare to the plan. Never skip it.</div></div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-num">8</div>
+        <div><div class="rule-title">The Chicago filter.</div><div class="rule-body">"Does this get me to Chicago faster or slower?" Most purchases that used to drain you fail this test hard.</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="goTo('dash',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-btn" onclick="goTo('tracker',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Flips
+    </button>
+    <button class="nav-btn" onclick="goTo('timeline',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Timeline
+    </button>
+    <button class="nav-btn" onclick="goTo('checkin',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Check-in
+    </button>
+  </nav>
+</div>
+
+<!-- UPDATE MODAL -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal">
+    <h3>Update balances</h3>
+    <input class="modal-input" type="number" id="inp-vx" placeholder="Venture X balance" inputmode="decimal">
+    <input class="modal-input" type="number" id="inp-sofi" placeholder="SoFi balance" inputmode="decimal">
+    <input class="modal-input" type="number" id="inp-mom" placeholder="Mom balance" inputmode="decimal">
+    <input class="modal-input" type="number" id="inp-lawyer" placeholder="Lawyer balance" inputmode="decimal">
+    <input class="modal-input" type="number" id="inp-fed" placeholder="Federal loans balance" inputmode="decimal">
+    <input class="modal-input" type="number" id="inp-goldman" placeholder="Goldman HYSA balance" inputmode="decimal">
+    <div class="modal-row" style="margin-top:8px;">
+      <button class="btn-cancel" onclick="closeModalDirect()">Cancel</button>
+      <button class="btn-save" onclick="saveBalances()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLIP MODAL -->
+<div id="flip-modal-overlay" onclick="closeFlipModal(event)">
+  <div id="modal" style="display:none;" id="flip-modal">
+    <h3>Log a flip</h3>
+    <input class="modal-input" type="text" id="inp-car" placeholder="Car (e.g. 2008 Honda Accord)" style="font-family:'Syne',sans-serif;">
+    <input class="modal-input" type="number" id="inp-buy" placeholder="Buy price" inputmode="decimal">
+    <input class="modal-input" type="number" id="inp-costs" placeholder="Costs (gas, mechanic, etc)" inputmode="decimal">
+    <input class="modal-input" type="number" id="inp-sell" placeholder="Sell price" inputmode="decimal">
+    <div class="modal-row" style="margin-top:8px;">
+      <button class="btn-cancel" onclick="closeFlipModalDirect()">Cancel</button>
+      <button class="btn-save" onclick="saveFlip()">Log Flip</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">Saved ✓</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const DEFAULT = {
+  vx: 14919, sofi: 10783, mom: 8000, lawyer: 3000, fed: 24503, goldman: 0.80,
+  flips: [], checkin: {}
+};
+
+function load() {
+  try { return JSON.parse(localStorage.getItem('chicago27')) || DEFAULT; }
+  catch { return DEFAULT; }
+}
+
+function save(state) {
+  localStorage.setItem('chicago27', JSON.stringify(state));
+}
+
+let state = load();
+
+// ─── DATE ────────────────────────────────────────────────────────────────────
+function updateDate() {
+  const now = new Date();
+  const chicago = new Date('2027-10-15');
+  const diff = Math.ceil((chicago - now) / (1000 * 60 * 60 * 24));
+  document.getElementById('daysLeft').textContent = diff.toLocaleString();
+  document.getElementById('topDate').textContent = now.toLocaleDateString('en-US', {month:'short', day:'numeric'}).toUpperCase();
+}
+
+// ─── RENDER DASHBOARD ────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n <= 0) return '$0';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function renderDash() {
+  const s = state;
+  const priority = Math.max(0, s.vx) + Math.max(0, s.sofi) + Math.max(0, s.mom) + Math.max(0, s.lawyer);
+  const startPriority = 36702;
+
+  document.getElementById('dash-priority').textContent = fmt(priority);
+  document.getElementById('dash-goldman').textContent = fmt(s.goldman);
+
+  const now = new Date();
+  const thisMonth = now.getMonth() + '-' + now.getFullYear();
+  const monthFlips = s.flips.filter(f => f.month === thisMonth);
+  const monthProfit = monthFlips.reduce((a, f) => a + f.profit, 0);
+  document.getElementById('dash-flips').textContent = fmt(monthProfit);
+  document.getElementById('dash-flips-sub').textContent = monthFlips.length + ' flip' + (monthFlips.length !== 1 ? 's' : '') + ' this month';
+
+  const startTotal = -(36702 + 24503);
+  const currentTotal = -(priority + s.fed) + s.goldman;
+  const delta = currentTotal - startTotal;
+  const nwEl = document.getElementById('dash-networth');
+  nwEl.textContent = (delta >= 0 ? '+' : '') + fmt(delta);
+  nwEl.className = 'stat-val ' + (delta >= 0 ? 'green' : 'red');
+
+  // Debt cards
+  document.getElementById('vx-bal').textContent = fmt(s.vx);
+  document.getElementById('sofi-bal').textContent = fmt(s.sofi);
+  document.getElementById('mom-bal').textContent = fmt(s.mom);
+  document.getElementById('lawyer-bal').textContent = fmt(s.lawyer);
+  document.getElementById('fed-bal').textContent = fmt(s.fed);
+
+  const setBar = (id, current, start) => {
+    const pct = Math.max(0, Math.min(100, (1 - current / start) * 100));
+    document.getElementById(id).style.width = pct + '%';
+  };
+  setBar('vx-bar', s.vx, 14919);
+  setBar('sofi-bar', s.sofi, 10783);
+  setBar('mom-bar', s.mom, 8000);
+  setBar('lawyer-bar', s.lawyer, 3000);
+}
+
+// ─── RENDER FLIPS ────────────────────────────────────────────────────────────
+function renderFlips() {
+  const s = state;
+  const total = s.flips.reduce((a, f) => a + f.profit, 0);
+  const now = new Date();
+  const thisMonth = now.getMonth() + '-' + now.getFullYear();
+  const monthFlips = s.flips.filter(f => f.month === thisMonth);
+  const monthProfit = monthFlips.reduce((a, f) => a + f.profit, 0);
+
+  document.getElementById('flip-total').textContent = fmt(total);
+  document.getElementById('flip-month').textContent = fmt(monthProfit);
+  document.getElementById('flip-count').textContent = s.flips.length + ' total flips';
+
+  const list = document.getElementById('flip-list');
+  if (s.flips.length === 0) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0;">No flips logged yet.<br>Log your first Craig run.</div>';
+    return;
+  }
+  list.innerHTML = [...s.flips].reverse().map((f, i) => `
+    <div class="flip-card">
+      <div class="flip-header">
+        <div>
+          <div class="flip-car">${f.car}</div>
+          <div class="flip-meta">${f.date} · Buy $${f.buy.toLocaleString()} + $${f.costs.toLocaleString()} costs → Sell $${f.sell.toLocaleString()}</div>
+        </div>
+        <div>
+          <div class="flip-profit green">+${fmt(f.profit)}</div>
+          <button class="delete-btn" onclick="deleteFlip(${s.flips.length - 1 - i})">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── RENDER CHECKIN ───────────────────────────────────────────────────────────
+function renderCheckin() {
+  const items = document.querySelectorAll('.check-item');
+  let done = 0;
+  items.forEach(item => {
+    const key = item.dataset.key;
+    const circle = item.querySelector('.check-circle');
+    const text = item.querySelector('.check-text');
+    if (state.checkin[key]) {
+      circle.classList.add('done');
+      circle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+      text.classList.add('done');
+      done++;
+    } else {
+      circle.classList.remove('done');
+      circle.innerHTML = '';
+      text.classList.remove('done');
+    }
+  });
+  const score = document.getElementById('checkin-score');
+  if (done === 8) {
+    score.innerHTML = '<span style="color:var(--green);font-weight:700;font-size:15px;">★ PERFECT WEEK — Chicago is getting closer ★</span>';
+  } else {
+    score.textContent = done + '/8 completed this week';
+  }
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function goTo(screen, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('content').scrollTop = 0;
+  if (screen === 'tracker') renderFlips();
+  if (screen === 'checkin') renderCheckin();
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+function openUpdateModal() {
+  const s = state;
+  document.getElementById('inp-vx').value = s.vx > 0 ? s.vx : '';
+  document.getElementById('inp-sofi').value = s.sofi > 0 ? s.sofi : '';
+  document.getElementById('inp-mom').value = s.mom > 0 ? s.mom : '';
+  document.getElementById('inp-lawyer').value = s.lawyer > 0 ? s.lawyer : '';
+  document.getElementById('inp-fed').value = s.fed > 0 ? s.fed : '';
+  document.getElementById('inp-goldman').value = s.goldman > 0 ? s.goldman : '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) { if (e.target === document.getElementById('modal-overlay')) closeModalDirect(); }
+function closeModalDirect() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+function saveBalances() {
+  const get = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; };
+  state.vx = get('inp-vx');
+  state.sofi = get('inp-sofi');
+  state.mom = get('inp-mom');
+  state.lawyer = get('inp-lawyer');
+  state.fed = get('inp-fed');
+  state.goldman = get('inp-goldman');
+  save(state);
+  closeModalDirect();
+  renderDash();
+  showToast('Balances updated ✓');
+}
+
+let flipModal = false;
+function openFlipModal() {
+  document.getElementById('flip-modal-overlay').style.display = 'flex';
+  document.getElementById('flip-modal-overlay').querySelector('#modal').style.display = 'block';
+  document.getElementById('inp-car').value = '';
+  document.getElementById('inp-buy').value = '';
+  document.getElementById('inp-costs').value = '';
+  document.getElementById('inp-sell').value = '';
+}
+
+function closeFlipModal(e) { if (e.target === document.getElementById('flip-modal-overlay')) closeFlipModalDirect(); }
+function closeFlipModalDirect() { document.getElementById('flip-modal-overlay').style.display = 'none'; }
+
+function saveFlip() {
+  const car = document.getElementById('inp-car').value.trim();
+  const buy = parseFloat(document.getElementById('inp-buy').value) || 0;
+  const costs = parseFloat(document.getElementById('inp-costs').value) || 0;
+  const sell = parseFloat(document.getElementById('inp-sell').value) || 0;
+  if (!car || !sell) { showToast('Fill in car name + sell price'); return; }
+  const profit = sell - buy - costs;
+  const now = new Date();
+  state.flips.push({
+    car, buy, costs, sell, profit,
+    date: now.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}),
+    month: now.getMonth() + '-' + now.getFullYear()
+  });
+  save(state);
+  closeFlipModalDirect();
+  renderFlips();
+  renderDash();
+  showToast('+' + fmt(profit) + ' logged ✓');
+}
+
+function deleteFlip(i) {
+  if (!confirm('Delete this flip?')) return;
+  state.flips.splice(i, 1);
+  save(state);
+  renderFlips();
+  renderDash();
+}
+
+// ─── CHECKIN ──────────────────────────────────────────────────────────────────
+function toggleCheck(circle) {
+  const item = circle.closest('.check-item');
+  const key = item.dataset.key;
+  state.checkin[key] = !state.checkin[key];
+  save(state);
+  renderCheckin();
+}
+
+function resetCheckin() {
+  if (!confirm('Reset checklist for new week?')) return;
+  state.checkin = {};
+  save(state);
+  renderCheckin();
+  showToast('New week started ✓');
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── FLIP MODAL FIX ───────────────────────────────────────────────────────────
+document.getElementById('flip-modal-overlay').style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:none;align-items:flex-end;';
+document.getElementById('flip-modal-overlay').querySelector('#modal').style.cssText = 'background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px calc(env(safe-area-inset-bottom) + 24px);width:100%;border-top:0.5px solid var(--border);';
+
+// ─── SERVICE WORKER ───────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+updateDate();
+renderDash();
+setInterval(updateDate, 60000);
+</script>
+</body>
+</html>
